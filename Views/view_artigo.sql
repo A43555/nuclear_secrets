@@ -22,26 +22,7 @@ ON Artigo
 INSTEAD OF INSERT
 AS
 BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
-
-	IF((SELECT estado FROM inserted) != 'em revisao')
-		ROLLBACK
-	
-	IF( (SELECT limiteSubArtigo FROM Conferencia WHERE 
-		nome	=	(SELECT		nome_conferencia	FROM	inserted) AND 
-		ano		=	(SELECT		ano_conferencia		FROM	inserted)
-	) < (SELECT		dataSubmissao		FROM	inserted) )
-		ROLLBACK
-
-	INSERT INTO _Artigo (id, resumo, estado, nome_conferencia, ano_conferencia, dataSubmissao) VALUES(
-		(SELECT		id					FROM	inserted),
-		(SELECT		resumo				FROM	inserted),
-		(SELECT		estado				FROM	inserted),
-		(SELECT		nome_conferencia	FROM	inserted),
-		(SELECT		ano_conferencia		FROM	inserted),
-		(SELECT		dataSubmissao		FROM	inserted)
-	)
-
-COMMIT
+ROLLBACK
 GO
 -----
 IF( OBJECT_ID('trg_Delete_Artigo') IS NOT NULL) DROP VIEW trg_Delete_Artigo 
@@ -52,7 +33,38 @@ INSTEAD OF DELETE
 AS
 BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
 
-	--???????????????????????????????????????????
+	IF EXISTS( SELECT * FROM deleted INNER JOIN _Conferencia ON 
+				deleted.nome_conferencia = nome AND
+				deleted.ano_conferencia = ano
+				WHERE deleted.dataSubmissao < _Conferencia.limiteSubArtigo
+	)
+	BEGIN
+		ROLLBACK
+		RETURN
+	END
+
+	DELETE FROM _Ficheiro FROM _Ficheiro INNER JOIN deleted AS del ON
+		_Ficheiro.id_artigo = del.id
+
+	DELETE FROM _Autor FROM _Autor INNER JOIN deleted AS del ON
+		_Autor.id_artigo = del.id
+
+	DELETE FROM _Revisao FROM _Revisao INNER JOIN deleted AS del ON
+		_Revisao.id_artigo = del.id
+
+	DELETE FROM _Revisor FROM _Revisor INNER JOIN deleted AS del ON
+		_Revisor.id_artigo = del.id
+
+
+
+	UPDATE _Registo SET posicao = 'presidente'
+		FROM _Registo  INNER JOIN  inserted ON
+			id_utilizador = dbo.fun_get_id(inserted.email_presidente) INNER JOIN
+		deleted ON
+			nome_conferencia	=	deleted.nome AND
+			ano_conferencia		=	deleted.ano 
+
+
 
 COMMIT
 GO
@@ -66,9 +78,9 @@ AS
 BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
 
 	UPDATE _Artigo SET
-		resumo	=	(SELECT		resumo	FROM	inserted)
-	WHERE 
-		id		=	(SELECT		id		FROM	deleted)
+		resumo = inserted.resumo,
+		dataSubmissao = inserted.dataSubmissao
+	FROM inserted INNER JOIN deleted ON inserted.id = deleted.id WHERE _Artigo.id = deleted.id
 
 COMMIT
 GO
