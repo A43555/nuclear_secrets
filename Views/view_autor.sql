@@ -19,25 +19,44 @@ INSTEAD OF INSERT
 AS
 BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
 
-	DECLARE @id_art INT, @nome VARCHAR(50), @ano INT, @bool BIT, @email VARCHAR(50)
-	SELECT	@id_art		=	id_artigo			FROM	 inserted
-	SELECT	@nome = nome_conferencia, @ano = ano_conferencia FROM Artigo WHERE id = @id_art
-	SELECT @email = email_autor FROM inserted
-
-	EXEC dbo.prc_make_Registo
-		@email_uti		=	@email,
-		@nome_conf		=	@nome,
-		@ano_conf		=	@ano,
-		@posicao_uti	=	'autor',
-		@result			=	@bool
-	
-	IF(@bool = 0)
-		ROLLBACK	
-
-	INSERT INTO _Autor (id_artigo, id_autor) VALUES(
-		(SELECT		id_artigo	FROM	inserted),
-		(SELECT		(dbo.fun_get_id(@email)))
+	IF EXISTS( SELECT * FROM inserted INNER JOIN _Artigo ON inserted.id_artigo = _Artigo.id INNER JOIN _Conferencia ON
+				_Artigo.nome_conferencia = nome AND
+				_Artigo.ano_conferencia = ano
+				WHERE _Artigo.dataSubmissao < _Conferencia.limiteSubArtigo
 	)
+	BEGIN
+		ROLLBACK
+		RETURN
+	END
+
+	IF EXISTS(
+		SELECT * FROM _Artigo INNER JOIN inserted ON 
+			_Artigo.id = inserted.id_artigo 
+		INNER JOIN _Registo ON
+			_Registo.nome_conferencia = _Artigo.nome_conferencia AND
+			_Registo.ano_conferencia = _Artigo.ano_conferencia
+		WHERE _Registo.posicao != 'utilizador'
+	)
+	BEGIN
+		ROLLBACK
+		RETURN
+	END 
+
+	INSERT INTO _Autor(id_artigo, id_autor)
+		SELECT id_artigo, dbo.fun_get_id(email_autor)
+		FROM inserted
+
+	UPDATE _Registo SET posicao = 'autor'
+		FROM _Registo  INNER JOIN  inserted ON
+			id_utilizador = dbo.fun_get_id(inserted.email_autor) 
+		INNER JOIN _Artigo ON
+			inserted.id_artigo = _Artigo.id AND
+			_Registo.nome_conferencia	=	_Artigo.nome_conferencia AND
+			_Registo.ano_conferencia	=	_Artigo.ano_conferencia
+
+	INSERT INTO _Registo(nome_conferencia,ano_conferencia,id_utilizador,posicao)
+		SELECT nome_conferencia, ano_conferencia, dbo.fun_get_id(email_autor),'autor' FROM _Artigo INNER JOIN inserted ON 
+			_Artigo.id = inserted.id_artigo
 
 COMMIT
 GO
