@@ -25,7 +25,7 @@ BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
 	IF EXISTS( SELECT * FROM inserted INNER JOIN _Artigo ON inserted.id_artigo = _Artigo.id INNER JOIN _Conferencia ON
 				_Artigo.nome_conferencia = nome AND
 				_Artigo.ano_conferencia = ano
-				WHERE inserted.dataRevisao > _Conferencia.limiteRevArtigo
+				WHERE inserted.dataRevisao > _Conferencia.limiteRevArtigo OR inserted.dataRevisao < _Conferencia.limiteSubArtigo
 	)
 	BEGIN
 		ROLLBACK
