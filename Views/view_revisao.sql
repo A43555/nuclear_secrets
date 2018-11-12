@@ -82,10 +82,8 @@ BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
 	UPDATE _Revisao SET
 		nota = inserted.nota,
 		texto = inserted.texto
-	FROM inserted INNER JOIN deleted 
-	
-	DELETE FROM _Revisao FROM _Revisao INNER JOIN deleted AS del ON
-		_Revisao.id_artigo = _Revisao.id_artigo AND
-		_Revisao.id_revisor = dbo.fun_get_id(email_revisor)
+	FROM inserted INNER JOIN deleted ON
+		inserted.id_artigo = deleted.id_artigo AND
+		inserted.email_revisor = deleted.email_revisor
 COMMIT
 GO
