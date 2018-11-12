@@ -13,10 +13,11 @@ BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
 	INSERT INTO @allTables(id,nome_conferencia,ano_conferencia,resumo,dataSubmissao,estado) SELECT id,nome_conferencia,ano_conferencia,resumo,dataSubmissao,estado
 		FROM _Artigo WHERE _Artigo.id= @id
 
-	INSERT INTO @allTables(id,nome_conferencia,ano_conferencia,resumo,dataSubmissao,estado) SELECT id,nome_conferencia,ano_conferencia,resumo,dataSubmissao,estado
+	INSERT INTO @tables(id,nome_conferencia,ano_conferencia,resumo,dataSubmissao,estado) SELECT id,nome_conferencia,ano_conferencia,resumo,dataSubmissao,estado
 		FROM @allTables EXCEPT SELECT id,nome_conferencia,ano_conferencia,resumo,dataSubmissao,estado FROM _Artigo INNER JOIN _Revisao ON _Revisao.id_artigo = _Artigo.id
 			WHERE( (SELECT AVG(nota) FROM _Revisao) < @cutOff)
 
+	SELECT * FROM @allTables
 	SELECT * FROM @tables
 
 	UPDATE _Artigo SET estado = 'aceite' FROM _Artigo INNER JOIN _Revisao as rev ON
