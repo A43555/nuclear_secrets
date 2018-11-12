@@ -46,26 +46,14 @@ BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
 	DELETE FROM _Ficheiro FROM _Ficheiro INNER JOIN deleted AS del ON
 		_Ficheiro.id_artigo = del.id
 
-	DELETE FROM _Autor FROM _Autor INNER JOIN deleted AS del ON
-		_Autor.id_artigo = del.id
+	DELETE FROM Autor WHERE EXISTS(SELECT * FROM Autor INNER JOIN deleted AS del ON Autor.id_artigo = del.id)
+	
 
 	DELETE FROM _Revisao FROM _Revisao INNER JOIN deleted AS del ON
 		_Revisao.id_artigo = del.id
 
-	DELETE FROM _Revisor FROM _Revisor INNER JOIN deleted AS del ON
-		_Revisor.id_artigo = del.id
-
-
-
-	UPDATE _Registo SET posicao = 'presidente'
-		FROM _Registo  INNER JOIN  inserted ON
-			id_utilizador = dbo.fun_get_id(inserted.email_presidente) INNER JOIN
-		deleted ON
-			nome_conferencia	=	deleted.nome AND
-			ano_conferencia		=	deleted.ano 
-
-
-
+	DELETE FROM Revisor WHERE EXISTS(SELECT * FROM Revisor INNER JOIN deleted AS del ON Revisor.id_artigo = del.id)
+	
 COMMIT
 GO
 -----

@@ -69,7 +69,27 @@ INSTEAD OF DELETE
 AS
 BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
 
-	--???????????????????????????????????????????
+	IF EXISTS( SELECT * FROM inserted INNER JOIN _Artigo ON inserted.id_artigo = _Artigo.id INNER JOIN _Conferencia ON
+				_Artigo.nome_conferencia = nome AND
+				_Artigo.ano_conferencia = ano
+				WHERE _Artigo.dataSubmissao < _Conferencia.limiteSubArtigo
+	)
+	BEGIN
+		ROLLBACK
+		RETURN
+	END
+
+	UPDATE _Registo SET posicao = 'utilizador'
+		FROM _Registo  INNER JOIN  deleted ON
+			id_utilizador = dbo.fun_get_id(deleted.email_autor) 
+		INNER JOIN _Artigo ON
+			deleted.id_artigo = _Artigo.id AND
+			_Registo.nome_conferencia	=	_Artigo.nome_conferencia AND
+			_Registo.ano_conferencia	=	_Artigo.ano_conferencia
+
+	DELETE FROM _Autor FROM _Autor INNER JOIN deleted AS del ON
+		_Autor.id_autor = dbo.fun_get_id(del.email_autor) AND
+		_Autor.id_artigo = del.id_artigo
 
 COMMIT
 GO
@@ -81,8 +101,5 @@ ON Autor
 INSTEAD OF UPDATE
 AS
 BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
-
 ROLLBACK
-
-COMMIT
 GO
