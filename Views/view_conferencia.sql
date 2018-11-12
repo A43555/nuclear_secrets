@@ -23,23 +23,18 @@ ON Conferencia
 INSTEAD OF INSERT
 AS
 BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
-	DECLARE @data_sub DATE, @data_rev DATE
-	SELECT @data_sub = limiteSubArtigo, @data_rev = limiteRevArtigo FROM inserted
-	IF (@data_rev < @data_sub) ROLLBACK
+
+	IF EXISTS(SELECT * FROM inserted WHERE limiteSubArtigo > limiteRevArtigo)
+		ROLLBACK
 
 	INSERT INTO _Conferencia (nome, ano, acronimo, id_presidente, limiteSubArtigo, limiteRevArtigo) 
-		VALUES  ((SELECT	nome				FROM	inserted),
-				 (SELECT	ano					FROM	inserted),
-				 (SELECT	acronimo			FROM	inserted),
-				 (SELECT	(dbo.fun_get_id((SELECT email_presidente FROM inserted)))),
-				 (SELECT	limiteSubArtigo		FROM	inserted),
-				 (SELECT	limiteRevArtigo		FROM	inserted))
+		SELECT nome, ano, acronimo, dbo.fun_get_id(email_presidente), limiteSubArtigo, limiteRevArtigo 
+			FROM inserted
 
-	INSERT INTO _Registo (id_utilizador, nome_conferencia, ano_conferencia, posicao)
-		VALUES ((dbo.fun_get_id((SELECT email_presidente FROM inserted))),
-				(SELECT nome					FROM inserted),
-				(SELECT ano						FROM inserted),
-				('presidente'))
+	INSERT INTO _Registo (id_utilizador, nome_conferencia, ano_conferencia, posicao) 
+		SELECT dbo.fun_get_id(email_presidente), nome, ano, 'presidente' 
+			FROM inserted
+
 COMMIT
 GO
 ---
@@ -51,8 +46,18 @@ ON Conferencia
 INSTEAD OF DELETE
 AS
 BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
-	
-		--???????????????????????????????????????????
+
+	DECLARE @SAFE_DELETE TABLE(nome VARCHAR(50), ano INT)
+
+	INSERT INTO @SAFE_DELETE SELECT nome, ano FROM _Conferencia WHERE EXISTS (SELECT nome, ano FROM DELETED WHERE 
+		_Conferencia.nome = DELETED.nome AND _Conferencia.ano = DELETED.ano EXCEPT SELECT nome_conferencia, ano_conferencia FROM _Artigo)
+
+	IF EXISTS(SELECT * FROM @SAFE_DELETE)
+		ROLLBACK
+
+	DELETE FROM _Conferencia FROM _Conferencia INNER JOIN @SAFE_DELETE AS sd ON 
+		_Conferencia.nome	=	sd.nome AND
+		_Conferencia.ano	=	sd.ano
 
 COMMIT
 GO
@@ -65,30 +70,41 @@ ON Conferencia
 INSTEAD OF UPDATE
 AS
 BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
-	DECLARE @new_pres VARCHAR(50), @nome VARCHAR(50), @ano INT, @bool BIT
-	SELECT	@new_pres	=	email_presidente	FROM	 inserted
-	SELECT	@nome		=	nome				FROM	 deleted
-	SELECT	@ano		=	ano					FROM	 deleted
 
-	EXEC dbo.prc_make_Registo
-		@email_uti		=	@new_pres,
-		@nome_conf		=	@nome,
-		@ano_conf		=	@ano,
-		@posicao_uti	=	'presidente',
-		@result			=	@bool
-	
-	IF(@bool = 0)
-		RAISERROR('Invalid user email',16,3)	
-	ELSE
-	BEGIN
-		UPDATE _Registo SET posicao = 'utilizador' WHERE  
-			id_utilizador		=	(SELECT	(dbo.fun_get_id((SELECT email_presidente FROM deleted)))) AND 
-			ano_conferencia		=	@ano AND
-			nome_conferencia	=	@nome
+	-- Verifica se existem utilizadores autores ou revisores
+	IF EXISTS(
+		SELECT * FROM _Registo 
+			INNER JOIN deleted ON 
+				_Registo.nome_conferencia	=	deleted.nome AND
+				_Registo.ano_conferencia	=	deleted.ano
+			INNER JOIN inserted ON
+				_Registo.id_utilizador = dbo.fun_get_id(inserted.email_presidente)
+			WHERE _Registo.posicao != 'utilizador'
+	) ROLLBACK
 
-		UPDATE _Conferencia SET id_presidente = (SELECT	(dbo.fun_get_id(@new_pres))) WHERE  
-			nome	=	@nome AND
-			ano		=	@ano
-	END
+	-- Coloca como utilizador os antigos presidentes
+	UPDATE _Registo SET posicao = 'utilizador' 
+		WHERE EXISTS(
+			SELECT nome, ano FROM _Registo INNER JOIN deleted ON
+				_Registo.nome_conferencia = deleted.nome AND
+				_Registo.ano_conferencia = deleted.ano
+		)
+
+	DECLARE @table TABLE(nome VARCHAR(50), ano INT)
+	INSERT INTO @table SELECT nome, ano FROM _Registo INNER JOIN inserted ON
+				_Registo.nome_conferencia = inserted.nome AND 
+				_Registo.ano_conferencia = inserted.ano
+
+	-- Coloca os utilizadores registados como presidentes
+	UPDATE _Registo SET posicao = 'presidente'
+		WHERE EXISTS(SELECT nome, ano FROM @table)
+
+	-- Coloca os utilizadores nao registados como presidentes
+	INSERT INTO _Registo(id_utilizador, nome_conferencia, ano_conferencia, posicao)
+		SELECT dbo.fun_get_id(inserted.email_presidente), deleted.nome, deleted.ano, 'presidente' FROM deleted INNER JOIN inserted ON
+			inserted.nome = deleted.nome AND 
+			inserted.ano = deleted.ano
+		EXCEPT SELECT nome, ano FROM @table
+
 COMMIT
 GO
