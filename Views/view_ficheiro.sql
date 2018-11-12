@@ -23,7 +23,7 @@ BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
 	IF EXISTS( SELECT * FROM inserted INNER JOIN _Artigo ON inserted.id_artigo = _Artigo.id INNER JOIN _Conferencia ON
 				_Artigo.nome_conferencia = nome AND
 				_Artigo.ano_conferencia = ano
-				WHERE _Artigo.dataSubmissao < _Conferencia.limiteSubArtigo
+				WHERE _Artigo.dataSubmissao > _Conferencia.limiteSubArtigo
 	)
 	BEGIN
 		ROLLBACK
@@ -48,7 +48,7 @@ BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
 	IF EXISTS( SELECT * FROM deleted INNER JOIN _Artigo ON deleted.id_artigo = _Artigo.id INNER JOIN _Conferencia ON
 				_Artigo.nome_conferencia = nome AND
 				_Artigo.ano_conferencia = ano
-				WHERE _Artigo.dataSubmissao < _Conferencia.limiteSubArtigo
+				WHERE _Artigo.dataSubmissao > _Conferencia.limiteSubArtigo
 	)
 	BEGIN
 		ROLLBACK
@@ -72,7 +72,7 @@ BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
 	IF EXISTS( SELECT * FROM deleted INNER JOIN _Artigo ON deleted.id_artigo = _Artigo.id INNER JOIN _Conferencia ON
 				_Artigo.nome_conferencia = nome AND
 				_Artigo.ano_conferencia = ano
-				WHERE _Artigo.dataSubmissao < _Conferencia.limiteSubArtigo
+				WHERE _Artigo.dataSubmissao > _Conferencia.limiteSubArtigo
 	)
 	BEGIN
 		ROLLBACK

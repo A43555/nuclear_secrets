@@ -36,7 +36,7 @@ BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
 	IF EXISTS( SELECT * FROM deleted INNER JOIN _Conferencia ON 
 				deleted.nome_conferencia = nome AND
 				deleted.ano_conferencia = ano
-				WHERE deleted.dataSubmissao < _Conferencia.limiteSubArtigo
+				WHERE deleted.dataSubmissao > _Conferencia.limiteSubArtigo
 	)
 	BEGIN
 		ROLLBACK
