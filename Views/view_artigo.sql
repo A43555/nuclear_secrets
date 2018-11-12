@@ -46,19 +46,14 @@ BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
 	DELETE FROM _Ficheiro FROM _Ficheiro INNER JOIN deleted AS del ON
 		_Ficheiro.id_artigo = del.id
 
-	DELETE FROM Autor FROM Autor INNER JOIN deleted AS del ON
-		Autor.id_artigo = del.id
+	DELETE FROM Autor WHERE EXISTS(SELECT * FROM Autor INNER JOIN deleted AS del ON Autor.id_artigo = del.id)
+	
 
 	DELETE FROM _Revisao FROM _Revisao INNER JOIN deleted AS del ON
 		_Revisao.id_artigo = del.id
 
-	DELETE FROM Revisor FROM Revisor INNER JOIN deleted AS del ON
-		Revisor.id_artigo = del.id
-
-
-
-
-
+	DELETE FROM Revisor WHERE EXISTS(SELECT * FROM Revisor INNER JOIN deleted AS del ON Revisor.id_artigo = del.id)
+	
 COMMIT
 GO
 -----

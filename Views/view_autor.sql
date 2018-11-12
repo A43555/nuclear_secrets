@@ -79,12 +79,6 @@ BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
 		RETURN
 	END
 
-
-
-	DECLARE @
-
-	IF ( SELECT id_artigo FROM inserted GROUP BY id_artigo INNER JOIN SELECT id_artigo FROM inserted )
-
 	UPDATE _Registo SET posicao = 'utilizador'
 		FROM _Registo  INNER JOIN  deleted ON
 			id_utilizador = dbo.fun_get_id(deleted.email_autor) 
