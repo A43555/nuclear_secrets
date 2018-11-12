@@ -11,7 +11,7 @@ AS
 	FROM _Utilizador INNER JOIN _Autor ON _Autor.id_autor = _Utilizador.id
 GO
 -------------------------(TRIGGERS)-------------------------
-IF( OBJECT_ID('trg_Insert_Autor') IS NOT NULL) DROP VIEW trg_Insert_Autor 
+IF( OBJECT_ID('trg_Insert_Autor') IS NOT NULL) DROP TRIGGER trg_Insert_Autor 
 GO
 CREATE TRIGGER trg_Insert_Autor
 ON Autor
@@ -63,7 +63,7 @@ BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
 COMMIT
 GO
 -----
-IF( OBJECT_ID('trg_Delete_Autor') IS NOT NULL) DROP VIEW trg_Delete_Autor 
+IF( OBJECT_ID('trg_Delete_Autor') IS NOT NULL) DROP TRIGGER trg_Delete_Autor 
 GO
 CREATE TRIGGER trg_Delete_Autor
 ON Autor

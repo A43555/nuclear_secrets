@@ -11,7 +11,7 @@ AS
 	FROM _Utilizador INNER JOIN _Revisor ON _Revisor.id_revisor = _Utilizador.id
 GO
 -------------------------(TRIGGERS)-------------------------
-IF( OBJECT_ID('trg_Insert_Revisor') IS NOT NULL) DROP VIEW trg_Insert_Revisor 
+IF( OBJECT_ID('trg_Insert_Revisor') IS NOT NULL) DROP TRIGGER trg_Insert_Revisor 
 GO
 CREATE TRIGGER trg_Insert_Revisor
 ON Revisor
@@ -53,7 +53,7 @@ BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
 COMMIT
 GO
 -----
-IF( OBJECT_ID('trg_Delete_Revisor') IS NOT NULL) DROP VIEW trg_Delete_Revisor 
+IF( OBJECT_ID('trg_Delete_Revisor') IS NOT NULL) DROP TRIGGER trg_Delete_Revisor 
 GO
 CREATE TRIGGER trg_Delete_Revisor
 ON Revisor

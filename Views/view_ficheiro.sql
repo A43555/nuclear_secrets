@@ -12,7 +12,7 @@ AS
 	FROM _Ficheiro
 GO
 -------------------------(TRIGGERS)-------------------------
-IF( OBJECT_ID('trg_Insert_Ficheiro') IS NOT NULL) DROP VIEW trg_Insert_Ficheiro 
+IF( OBJECT_ID('trg_Insert_Ficheiro') IS NOT NULL) DROP TRIGGER trg_Insert_Ficheiro 
 GO
 CREATE TRIGGER trg_Insert_Ficheiro
 ON Ficheiro
@@ -37,7 +37,7 @@ BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
 COMMIT
 GO
 -----
-IF( OBJECT_ID('trg_Delete_Ficheiro') IS NOT NULL) DROP VIEW trg_Delete_Ficheiro 
+IF( OBJECT_ID('trg_Delete_Ficheiro') IS NOT NULL) DROP TRIGGER trg_Delete_Ficheiro 
 GO
 CREATE TRIGGER trg_Delete_Ficheiro
 ON Ficheiro
