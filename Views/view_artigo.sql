@@ -46,13 +46,12 @@ BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
 	DELETE FROM _Ficheiro FROM _Ficheiro INNER JOIN deleted AS del ON
 		_Ficheiro.id_artigo = del.id
 
-	DELETE FROM Autor WHERE EXISTS(SELECT * FROM Autor INNER JOIN deleted AS del ON Autor.id_artigo = del.id)
+	DELETE FROM Autor WHERE EXISTS(SELECT id_artigo, email_autor FROM _Autor INNER JOIN deleted AS del ON Autor.id_artigo = del.id)
 	
-
 	DELETE FROM _Revisao FROM _Revisao INNER JOIN deleted AS del ON
 		_Revisao.id_artigo = del.id
 
-	DELETE FROM Revisor WHERE EXISTS(SELECT * FROM Revisor INNER JOIN deleted AS del ON Revisor.id_artigo = del.id)
+	DELETE FROM Revisor WHERE EXISTS(SELECT id_artigo, email_revisor FROM _Revisor INNER JOIN deleted AS del ON Revisor.id_artigo = del.id)
 	
 COMMIT
 GO
@@ -64,6 +63,19 @@ ON Artigo
 INSTEAD OF UPDATE
 AS
 BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
+
+	IF EXISTS( SELECT * FROM inserted INNER JOIN deleted ON 
+				deleted.nome_conferencia = inserted.nome_conferencia AND
+				deleted.ano_conferencia = inserted.ano_conferencia
+				INNER JOIN _Conferencia ON
+				deleted.nome_conferencia = _Conferencia.nome AND
+				deleted.ano_conferencia = _Conferencia.ano
+				WHERE inserted.dataSubmissao > _Conferencia.limiteSubArtigo
+	)
+	BEGIN
+		ROLLBACK
+		RETURN
+	END
 
 	UPDATE _Artigo SET
 		resumo = inserted.resumo,
