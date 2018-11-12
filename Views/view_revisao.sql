@@ -22,21 +22,20 @@ INSTEAD OF INSERT
 AS
 BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
 
-IF((SELECT		nota		FROM	inserted) > 100 OR (SELECT		nota		FROM	inserted) < 0)
-	ROLLBACK
-
-IF( (SELECT limiteRevArtigo FROM Conferencia WHERE 
-		nome	=	(SELECT		nome_conferencia	FROM	Artigo WHERE id = (SELECT id_artigo FROM inserted)) AND 
-		ano		=	(SELECT		ano_conferencia	FROM	Artigo WHERE id = (SELECT id_artigo FROM inserted))
-	) < (SELECT		dataRevisao		FROM	inserted) )
-		ROLLBACK
-
-	INSERT INTO _Revisao (id_artigo, id_revisor, texto, nota) VALUES(
-		(SELECT		id_artigo			FROM	inserted),
-		(SELECT		dbo.fun_get_id((SELECT email_revisor FROM inserted))),
-		(SELECT		texto				FROM	inserted),
-		(SELECT		nota				FROM	inserted)
+	IF EXISTS( SELECT * FROM inserted INNER JOIN _Artigo ON inserted.id_artigo = _Artigo.id INNER JOIN _Conferencia ON
+				_Artigo.nome_conferencia = nome AND
+				_Artigo.ano_conferencia = ano
+				WHERE inserted.dataRevisao < _Conferencia.limiteRevArtigo
 	)
+	BEGIN
+		ROLLBACK
+		RETURN
+	END
+
+	INSERT INTO _Revisao(id_artigo, id_revisor, texto, nota, dataRevisao)
+		SELECT id_artigo, dbo.fun_get_id(email_revisor), texto, nota, dataRevisao
+		FROM inserted
+
 
 COMMIT
 GO
@@ -49,7 +48,7 @@ INSTEAD OF DELETE
 AS
 BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
 
-	--???????????????????????????????????????????
+
 
 COMMIT
 GO
