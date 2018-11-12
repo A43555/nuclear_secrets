@@ -25,7 +25,7 @@ BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
 	IF EXISTS( SELECT * FROM inserted INNER JOIN _Artigo ON inserted.id_artigo = _Artigo.id INNER JOIN _Conferencia ON
 				_Artigo.nome_conferencia = nome AND
 				_Artigo.ano_conferencia = ano
-				WHERE inserted.dataRevisao < _Conferencia.limiteRevArtigo
+				WHERE inserted.dataRevisao > _Conferencia.limiteRevArtigo
 	)
 	BEGIN
 		ROLLBACK
@@ -35,7 +35,6 @@ BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
 	INSERT INTO _Revisao(id_artigo, id_revisor, texto, nota, dataRevisao)
 		SELECT id_artigo, dbo.fun_get_id(email_revisor), texto, nota, dataRevisao
 		FROM inserted
-
 
 COMMIT
 GO
@@ -49,24 +48,6 @@ AS
 BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
 
 
-
-COMMIT
-GO
------
-IF( OBJECT_ID('trg_Update_Revisao') IS NOT NULL) DROP TRIGGER trg_Update_Revisao 
-GO
-CREATE TRIGGER trg_Update_Revisao
-ON Revisao
-INSTEAD OF UPDATE
-AS
-BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
-
-	UPDATE _Revisao SET
-		texto		=	(SELECT		texto		FROM	inserted),
-		nota		=	(SELECT		nota		FROM	inserted)
-	WHERE 
-		id_artigo	=	(SELECT		id_artigo	FROM	deleted) AND
-		id_revisor	=	dbo.fun_get_id((SELECT	email_revisor	FROM	deleted))
 
 COMMIT
 GO
