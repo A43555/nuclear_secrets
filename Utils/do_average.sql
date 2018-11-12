@@ -21,11 +21,13 @@ AS
 	DECLARE @Average INT
 	DECLARE @idArtigo INT
 	DECLARE @bool INT
+	DECLARE @Artigo_Conf TABLE (id INT, estado VARCHAR(15), nome_conferencia VARCHAR(50), ano_conferencia INT, resumo VARCHAR(50), dataSubmissao DATE)
 
-	SELECT * INTO Artigo_Conf FROM Artigo WHERE nome_conferencia = @nomeConf AND ano_conferencia = @anoConf
+	INSERT INTO @Artigo_Conf(id,estado,nome_conferencia,ano_conferencia,resumo) 
+		SELECT id,estado,nome_conferencia,ano_conferencia,dataSubmissao FROM _Artigo WHERE nome_conferencia = @nomeConf AND ano_conferencia = @anoConf
 
 	DECLARE iter_artigos CURSOR LOCAL FORWARD_ONLY
-	FOR SELECT [id] FROM Artigo_Conf
+	FOR SELECT [id] FROM @Artigo_Conf
 	OPEN iter_artigos
 	DECLARE @curr INT = 0
 	FETCH NEXT FROM iter_artigos INTO @curr

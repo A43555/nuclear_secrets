@@ -44,3 +44,22 @@ AS
 
 	COMMIT
 GO
+
+IF OBJECT_ID('Fechar_Revisao') IS NOT NULL
+	DROP PROCEDURE Fechar_Revisao
+GO
+CREATE PROCEDURE Fechar_Revisao
+	@id_artigo INT,
+	@data_atual DATE
+AS
+	BEGIN TRANSACTION; SET XACT_ABORT ON; SET NOCOUNT ON
+	
+	IF(@data_atual < (SELECT _Conferencia.limiteRevArtigo FROM _Artigo INNER JOIN _Conferencia ON ano_conferencia = ano AND nome_conferencia = nome))
+	BEGIN
+		ROLLBACK
+		RETURN
+	END
+	UPDATE _Revisao SET dataRevisao = @data_atual WHERE id_artigo = @id_artigo
+
+	COMMIT
+GO
